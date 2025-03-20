@@ -1,17 +1,21 @@
 import streamlit as st
 from retrieval.bm25_retriever import BM25Retriever
 from retrieval.glove_retriever import GloVeRetriever
-from generator.qwen_generator import QwenAnswerGenerator
+from generator.qwen_generator import QwenAPIGenerator
 from retrieval.document_store import DocumentStore
+from retrieval.dpr_retriever import DPRRetriever
+
 
 # 初始化组件（带缓存）
 @st.cache_resource
 def init_system():
+    print("Initializing system...")
     document_store = DocumentStore("data/documents.jsonl")
     return {
         "bm25": BM25Retriever(document_store),
-        "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.txt"),
-        "generator": QwenAnswerGenerator(),
+        "DPR": DPRRetriever(document_store),
+        "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt"),
+        "generator": QwenAPIGenerator(),
         "docs": document_store
     }
 
@@ -29,7 +33,7 @@ def main():
         st.header("Configuration")
         retriever_type = st.selectbox(
             "Retrieval Method",
-            ["BM25", "GloVe"],
+            ["BM25", "DPR", "GloVe"],
             index=0
         )
         top_k = st.slider("Number of Documents to Retrieve", 1, 10, 5)
@@ -62,4 +66,5 @@ def main():
         st.markdown(f"```\n{answer}\n```")
 
 if __name__ == "__main__":
+    print("Running app.py...")
     main()

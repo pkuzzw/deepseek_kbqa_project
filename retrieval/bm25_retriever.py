@@ -5,6 +5,7 @@ from .document_store import DocumentStore
 
 class BM25Retriever:
     def __init__(self, document_store: DocumentStore):
+        print("Initializing BM25Retriever...")
         self.document_store = document_store
         self.doc_ids = list(document_store.documents.keys())
         

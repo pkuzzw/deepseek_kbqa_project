@@ -6,6 +6,7 @@ from .document_store import DocumentStore
 
 class GloVeRetriever:
     def __init__(self, document_store: DocumentStore, glove_path: str):
+        print("Initializing GloVeRetriever...")
         self.document_store = document_store
         self.doc_ids = list(document_store.documents.keys())
         
