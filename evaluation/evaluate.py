@@ -1,7 +1,7 @@
 import json
 from tqdm import tqdm
 from retrieval.bm25_retriever import BM25Retriever
-from generator.qwen_generator import QwenAnswerGenerator
+from generator.QwenAPIClient import QwenAnswerGenerator
 
 class Evaluator:
     def __init__(self):

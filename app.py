@@ -1,70 +1,81 @@
 import streamlit as st
 from retrieval.bm25_retriever import BM25Retriever
 from retrieval.glove_retriever import GloVeRetriever
-from generator.qwen_generator import QwenAPIGenerator
+from generator.QwenAPIClient import QwenAPIClient
 from retrieval.document_store import DocumentStore
-from retrieval.dpr_retriever import DPRRetriever
 
 
-# 初始化组件（带缓存）
+# Initialize components (with caching)
 @st.cache_resource
 def init_system():
+    # Initialize the system components and cache them for performance
     print("Initializing system...")
     document_store = DocumentStore("data/documents.jsonl")
+    BM25_save_path = "bm25_data.pkl"
+    glove_save_path = "glove_data.pkl"
+    api_key = "sk-ooscmypgomjmlrzejjhcidzhzegvmirvvweonaoacfmpcrrc"
+    base_url = "https://api.siliconflow.cn"
+    # Initialize the system components
     return {
-        "bm25": BM25Retriever(document_store),
-        "DPR": DPRRetriever(document_store),
-        "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt"),
-        "generator": QwenAPIGenerator(),
-        "docs": document_store
+        "bm25": BM25Retriever(document_store,BM25_save_path),  # BM25 retriever for document retrieval
+      #  "DPR": DPRRetriever(document_store),  # Uncomment to add DPR retriever
+        "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt",glove_save_path),  # GloVe retriever
+        "generator": QwenAPIClient(api_key, base_url) ,  # Answer generator using Qwen API
+        "docs": document_store  # Document store for storing and retrieving documents
     }
 
 def main():
+    # Set up the Streamlit page configuration
     st.set_page_config(page_title="KBQA System", layout="wide")
     
-    # 系统初始化
-    system = init_system()
+    # System initialization
+    system = init_system()  # Initialize the system components
     
-    # 页面标题
-    st.title("📚 Knowledge Base Question Answering System")
+    # Page title
+    st.title("📚 Knowledge Base Question Answering System")  # Display the app title
     
-    # 侧边栏配置
+    # Sidebar configuration
     with st.sidebar:
-        st.header("Configuration")
+        st.header("Configuration")  # Sidebar header
         retriever_type = st.selectbox(
-            "Retrieval Method",
-            ["BM25", "DPR", "GloVe"],
+            "Retrieval Method",  # Dropdown to select retrieval method
+            ["BM25", "GloVe"],
             index=0
         )
-        top_k = st.slider("Number of Documents to Retrieve", 1, 10, 5)
+        top_k = st.slider("Number of Documents to Retrieve", 1, 10, 5)  # Slider to select number of documents
     
-    # 主界面
-    question = st.text_input("Ask your question:", placeholder="When was iOS 11 released?")
+    # Main interface
+    question = st.text_input("Ask your question:", placeholder="When was iOS 11 released?")  # Input field for user question
     
     if question:
-        # 执行检索
-        with st.spinner("Searching knowledge base..."):
+        # Perform retrieval
+        with st.spinner("Searching knowledge base..."):  # Show spinner while retrieving documents
             if retriever_type == "BM25":
-                doc_ids = system["bm25"].retrieve(question, top_k)
+                doc_ids = system["bm25"].retrieve(question, top_k)  # Retrieve documents using BM25
             else:
-                doc_ids = system["glove"].retrieve(question, top_k)
+                doc_ids = system["glove"].retrieve(question, top_k)  # Retrieve documents using GloVe
             
-            contexts = [system["docs"].get_document(did) for did in doc_ids]
+            contexts = [system["docs"].get_document(did) for did in doc_ids]  # Get document contents
         
-        # 显示检索结果
-        st.subheader("🔍 Retrieved Documents")
+        # Display retrieval results
+        st.subheader("🔍 Retrieved Documents")  # Display retrieved documents
+        selected_context = None
         for i, (doc_id, context) in enumerate(zip(doc_ids, contexts)):
-            with st.expander(f"Document {i+1} (ID: {doc_id})"):
-                st.text(context[:1000] + "...")  # 限制显示长度
+            if st.button(f"Use Document {i+1} (ID: {doc_id})"):  # Button to select a document
+                selected_context = context  # Set the selected context
         
-        # 生成答案
-        with st.spinner("Generating answer..."):
-            answer = system["generator"].generate_answer(question, contexts)
+        # Generate answer
+        if selected_context:
+            with st.spinner("Generating answer..."):  # Show spinner while generating answer
+                answer = system["generator"].generate_answer(question, [selected_context])  # Generate answer using selected context
+        else:
+            st.warning("Please select a document to generate an answer.")  # Warning if no document is selected
+
         
-        # 显示答案
-        st.subheader("💡 Answer")
-        st.markdown(f"```\n{answer}\n```")
+        # Display answer
+        st.subheader("💡 Answer")  # Display the generated answer
+        st.text_area("Generated Answer", value=answer, height=200)  # Use a large text area to display the answer
 
 if __name__ == "__main__":
-    print("Running app.py...")
-    main()
+    print("Running app.py...")  # Log message when the app starts
+    main()  # Run the main function
