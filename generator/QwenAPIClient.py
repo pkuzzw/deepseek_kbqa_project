@@ -1,5 +1,6 @@
 import requests
 from openai import OpenAI
+from generator.prompt import SYSTEM_PROMPT
 
 class QwenAPIClient:
     def __init__(self, api_key, api_url):
@@ -19,7 +20,7 @@ class QwenAPIClient:
             response = client.chat.completions.create(
             model="Qwen/Qwen2.5-72B-Instruct",  
             messages=[
-                {"role": "system", "content": "If you are a Knowledge Based Answering System's assistant, please answer the question based on the background information provided, and the scope of your answers is limited to the content provided by the background information。"},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"Background Information：{context}"},
                 {"role": "user", "content": question}
             ],
