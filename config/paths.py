@@ -6,6 +6,7 @@ DATA_PATHS = {
     "documents": BASE_DIR / "data/documents.jsonl",
     "train": BASE_DIR / "data/train.jsonl",
     "val": BASE_DIR / "data/val.jsonl",
+    "val_result": BASE_DIR / "data/val_predict.jsonl",
     "test": BASE_DIR / "data/test.jsonl"
 }
 

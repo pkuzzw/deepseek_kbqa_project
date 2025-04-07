@@ -8,7 +8,7 @@ class ModelConfig:
     project_root: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     # 模型运行模式配置
-    run_mode: str = "local"  # 可选 ["local", "api", "hybrid"]
+    run_mode: str = "api"  # 可选 ["local", "api", "hybrid"]
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     
     # Qwen2.5-7B 本地模型配置

@@ -1,7 +1,7 @@
 import joblib
 from rank_bm25 import BM25Okapi
 from nltk.tokenize import word_tokenize
-from .document_store import DocumentStore
+from .document_store import DocRetrievalResponse, DocumentChunk, DocumentStore
 
 
 class BM25Retriever:
@@ -9,6 +9,7 @@ class BM25Retriever:
         print("Initializing BM25Retriever...")
         self.document_store = document_store
         self.doc_ids = list(document_store.documents.keys())
+        self.doc_chunk_ids = list(document_store.document_chunks.keys())
 
         if save_path:
             try:
@@ -23,32 +24,51 @@ class BM25Retriever:
 
     def _initialize_bm25(self):
         # 预处理文档
-        self.tokenized_docs = [
-            self._tokenize(self.document_store.documents[doc_id])
-            for doc_id in self.doc_ids
+        self.tokenized_chunks = [
+            self._tokenize(self.document_store.get_chunk(doc_chunk_id).chunk_text)
+            for doc_chunk_id in self.doc_chunk_ids
         ]
-        self.bm25 = BM25Okapi(self.tokenized_docs)
+
+        self.bm25 = BM25Okapi(self.tokenized_chunks)
 
     def _tokenize(self, text: str) -> list:
         return word_tokenize(text.lower())
 
-    def retrieve(self, query: str, top_k: int = 5) -> list:
+    def retrieve(self, query: str, top_k: int = 5) -> DocRetrievalResponse:
         print("Retrieving...for...+"+query)
         tokenized_query = self._tokenize(query)
-        doc_scores = self.bm25.get_scores(tokenized_query)
+        chunk_scores = self.bm25.get_scores(tokenized_query)
 
-        # 获取 top_k 文档 ID
+        # 获取 top_k chunk ID
         sorted_indices = sorted(
-            range(len(doc_scores)),
-            key=lambda i: doc_scores[i],
+            range(len(chunk_scores)),
+            key=lambda i: chunk_scores[i],
             reverse=True
-        )[:top_k]
+        )[:top_k*10]
 
-        return [self.doc_ids[i] for i in sorted_indices]
+        sorted_chunk_ids = [self.doc_chunk_ids[i] for i in sorted_indices]
+        
+        doc_ids = []
+        doc_chunks = []
+        for i in sorted_chunk_ids:
+            doc_chunk: DocumentChunk = self.document_store.get_chunk(i)
+
+            # doc_chunks
+            if len(doc_chunks) < top_k:
+                doc_chunks.append(doc_chunk)
+
+            # doc_ids
+            if doc_chunk.doc_id not in doc_ids:
+                # 如果文档 ID 不在 doc_ids 中，则添加
+                doc_ids.append(doc_chunk.doc_id)
+                if len(doc_ids) >= top_k:
+                    break
+
+        return DocRetrievalResponse(doc_ids, doc_chunks)
 
     def save_data(self, save_path):
         data = {
-            "tokenized_docs": self.tokenized_docs,
+            "tokenized_chunks": self.tokenized_chunks,
             "bm25": self.bm25
         }
         joblib.dump(data, save_path)
@@ -56,7 +76,8 @@ class BM25Retriever:
 
     def load_data(self, save_path):
         data = joblib.load(save_path)
-        self.tokenized_docs = data["tokenized_docs"]
+        self.tokenized_chunks = data["tokenized_chunks"]
         self.bm25 = data["bm25"]
+
         print(f"数据已从 {save_path} 加载")
     

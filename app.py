@@ -14,7 +14,7 @@ def init_system():
     document_store = DocumentStore("data/documents.jsonl")
     BM25_save_path = "bm25_data.pkl"
     glove_save_path = "glove_data.pkl"
-    api_key = "sk-ooscmypgomjmlrzejjhcidzhzegvmirvvweonaoacfmpcrrc"
+    api_key = "sk-dwpxzqylfqdijatcxhmaqgjrjruxveypcziudbxfbzfwmaju"
     base_url = "https://api.siliconflow.cn"
     # Initialize the system components
     return {
@@ -75,7 +75,7 @@ def main():
         else:
             st.warning("Please select a document to generate an answer.")  # Warning if no document is selected
 
-        
+
         # Display answer
         st.subheader("💡 Answer")  # Display the generated answer
         st.text_area("Generated Answer", value=answer, height=5)  # Use a text area to display the answer
