@@ -40,5 +40,8 @@ class QwenAPIClient:
             print(f"An error occurred: {str(e)}")
             #sleep for 1 second to avoid rate limit
             time.sleep(60)
+
+            if "{'code': 50508, 'message': 'System is too busy now. Please try again later.', 'data': None}" in str(e):
+                return self.generate_answer(question, contexts)
             return NOT_FOUND_MESSAGE
 

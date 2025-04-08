@@ -83,6 +83,26 @@ if __name__ == "__main__":
 
     print("\n\n")
     gold_file_name = 'data/val.jsonl'
-    pred_file_name = 'data/val_predict_bm25_chunk_result_1000.jsonl'
+    pred_file_name = 'data/val_predict_bm25_100_questions.jsonl'
+    print(f"\n\n{pred_file_name}")
     metrics = calculate_metrics(gold_file_name, pred_file_name)
     print_results(metrics)
+
+    gold_file_name = 'data/val.jsonl'
+    pred_file_name = 'data/val_predict_glove_100_questions.jsonl'
+    print(f"\n\n{pred_file_name}")
+    metrics = calculate_metrics(gold_file_name, pred_file_name)
+    print_results(metrics)
+
+    gold_file_name = 'data/val.jsonl'
+    pred_file_name = 'data/val_predict_bm25_full.jsonl'
+    print(f"\n\n{pred_file_name}")
+    metrics = calculate_metrics(gold_file_name, pred_file_name)
+    print_results(metrics)
+
+    gold_file_name = 'data/val.jsonl'
+    pred_file_name = 'data/val_predict_glove_full.jsonl'
+    print(f"\n\n{pred_file_name}")
+    metrics = calculate_metrics(gold_file_name, pred_file_name)
+    print_results(metrics)
+

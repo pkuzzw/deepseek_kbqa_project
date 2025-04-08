@@ -3,6 +3,7 @@ import json
 from typing import Dict, List
 import re
 import nltk
+nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
 
 class DocRetrievalResponse:
@@ -80,7 +81,6 @@ class DocumentStore:
             # Group sentences into chunks
             current_chunk = ""
             for sentence in sentences:
-                # Remove leading and trailing whitespace
                 sentence = sentence.strip()
                 # If adding the sentence exceeds the chunk size, finalize the current chunk
                 if len(current_chunk) + len(sentence) > chunk_size:

@@ -25,7 +25,7 @@ class Evaluator:
         results = []
 
         i = 0
-        for sample in tqdm(samples[:5]):
+        for sample in tqdm(samples):
             # Retrieve top k documents
             docRetrievalResponse = self.retriever.retrieve(sample["question"], 5)
             doc_ids = docRetrievalResponse.topk_doc_id
@@ -43,7 +43,7 @@ class Evaluator:
             print(f"Document IDs: {doc_ids}")
         
         # Save results
-        with open(DATA_PATHS["val_result"], "w") as f:
+        with open(DATA_PATHS["val_result_bm25"], "w") as f:
             for res in results:
                 f.write(json.dumps(res) + "\n")
 
