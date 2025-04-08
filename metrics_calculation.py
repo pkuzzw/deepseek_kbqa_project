@@ -38,6 +38,11 @@ def calculate_metrics(gold_file, pred_file):
         'mrr@5': mrr_5
     }
 
+def print_results(metrics):
+    print(f"Answer Accuracy:             {metrics['accuracy']:.4f}")
+    print(f"Document Retrieval Recall@5: {metrics['recall@5']:.4f}")
+    print(f"Document Retrieval MRR@5   : {metrics['mrr@5']:.4f}")
+
 if __name__ == "__main__":
     '''
     Please run the following command to get the evaluation results:
@@ -69,11 +74,15 @@ if __name__ == "__main__":
         "document_id": list[int]
     }
     '''
-    gold_file_name = 'data/val.jsonl'
-    pred_file_name = 'data/val_predict.jsonl'
+   #gold_file_name = 'data/val.jsonl'
+    #pred_file_name = 'data/val_predict.jsonl'
     
+    #metrics = calculate_metrics(gold_file_name, pred_file_name)
+    #print_results(metrics)
+
+
+    print("\n\n")
+    gold_file_name = 'data/val.jsonl'
+    pred_file_name = 'data/val_predict_bm25_chunk_result_1000.jsonl'
     metrics = calculate_metrics(gold_file_name, pred_file_name)
-    print(f"Evaluation Result:", flush=True)
-    print(f"Answer Accuracy:             {metrics['accuracy']:.4f}", flush=True)
-    print(f"Document Retrieval Recall@5: {metrics['recall@5']:.4f}", flush=True)
-    print(f"Document Retrieval MRR@5   : {metrics['mrr@5']:.4f}", flush=True)
+    print_results(metrics)

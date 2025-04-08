@@ -2,6 +2,7 @@ import json
 from tqdm import tqdm
 from retrieval.bm25_retriever import BM25Retriever
 from retrieval.document_store import DocumentStore
+from retrieval.glove_retriever import GloVeRetriever
 from generator.QwenAPIClient import QwenAPIClient
 from config.paths import DATA_PATHS
 
@@ -14,6 +15,7 @@ class Evaluator:
         base_url = "https://api.siliconflow.cn"
 
         self.retriever = BM25Retriever(document_store, BM25_save_path)
+        #self.retriever = GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt",glove_save_path)
         self.generator = QwenAPIClient(api_key, base_url)
 
     def evaluate_val(self):
@@ -23,7 +25,7 @@ class Evaluator:
         results = []
 
         i = 0
-        for sample in tqdm(samples[:50]):
+        for sample in tqdm(samples[:5]):
             # Retrieve top k documents
             docRetrievalResponse = self.retriever.retrieve(sample["question"], 5)
             doc_ids = docRetrievalResponse.topk_doc_id

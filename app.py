@@ -18,7 +18,7 @@ def init_system():
     base_url = "https://api.siliconflow.cn"
     # Initialize the system components
     return {
-        "bm25": BM25Retriever(document_store,BM25_save_path),  # BM25 retriever for document retrieval
+        "bm25": BM25Retriever(document_store, BM25_save_path),  # BM25 retriever for document retrieval
       #  "DPR": DPRRetriever(document_store),  # Uncomment to add DPR retriever
         "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt",glove_save_path),  # GloVe retriever
         "generator": QwenAPIClient(api_key, base_url) ,  # Answer generator using Qwen API
@@ -52,10 +52,11 @@ def main():
         # Perform retrieval
         with st.spinner("Searching knowledge base..."):  # Show spinner while retrieving documents
             if retriever_type == "BM25":
-                doc_ids = system["bm25"].retrieve(question, top_k)  # Retrieve documents using BM25
+                doc_retrieval_response = system["bm25"].retrieve(question, top_k)  # Retrieve documents using BM25
             else:
-                doc_ids = system["glove"].retrieve(question, top_k)  # Retrieve documents using GloVe
+                doc_retrieval_response = system["glove"].retrieve(question, top_k)  # Retrieve documents using GloVe
             
+            doc_ids = doc_retrieval_response.topk_doc_id
             contexts = [system["docs"].get_document(did) for did in doc_ids]  # Get document contents
         
         # Display retrieval results

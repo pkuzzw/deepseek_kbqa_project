@@ -2,6 +2,8 @@
 import json
 from typing import Dict, List
 import re
+import nltk
+from nltk.tokenize import sent_tokenize
 
 class DocRetrievalResponse:
     def __init__(self, topk_doc_id: List[int], topk_doc_chunk: List['DocumentChunk']):
@@ -57,42 +59,55 @@ class DocumentStore:
         for chunk in chunks:
             self.document_chunks[chunk.chunk_id] = chunk
 
-    def chunk_documents(self, chunk_size: int = 400) -> list:
+    def chunk_documents(self, chunk_size: int = 600) -> list:
         """
         Splits the documents into chunks of specified size.
 
         Args:
-            chunk_size (int): The size of each chunk.
+            chunk_size (int): The max size of each chunk.
         """
         chunks = []
         id_count = 0
         for doc_id, text in self.documents.items():
-            # Remove newlines and extra spaces
-            text = re.sub(r"\s+", " ", text).strip()
-            # Remove HTML tags and special characters
-            text = re.sub(r"<[^>]+>", " ", text)
+            # Preprocess the text
+            text = re.sub(r"\s+", " ", text).strip()  # Remove newlines and extra spaces
+            text = re.sub(r"\t+", " ", text).strip()  # Remove tabs
+            text = re.sub(r"<[^>]+>", " ", text).strip()  # Remove HTML tags and special characters
 
-            for i in range(0, len(text), chunk_size):
-                id_count += 1
+            # Tokenize the text into sentences
+            sentences = sent_tokenize(text)
 
-                # if the remaining text is less than chunk_size + chunk_size/5, group it tgt
-                if len(text[i:]) < chunk_size + chunk_size / 5:
-                    chunk = text[i:]
+            # Group sentences into chunks
+            current_chunk = ""
+            for sentence in sentences:
+                # Remove leading and trailing whitespace
+                sentence = sentence.strip()
+                # If adding the sentence exceeds the chunk size, finalize the current chunk
+                if len(current_chunk) + len(sentence) > chunk_size:
+                    id_count += 1
                     chunks.append(
                         DocumentChunk(
                             chunk_id=id_count,
                             doc_id=doc_id,
-                            chunk_text=chunk
-                    ))
-                    break
+                            chunk_text=current_chunk
+                        )
+                    )
+                    current_chunk = ""  # Start a new chunk
 
-                chunk = text[i:i + chunk_size]
+                current_chunk += sentence + " "  # Add the sentence to the current chunk
+                current_chunk = current_chunk.strip()  # Remove leading and trailing whitespace
+ 
+            # Add the last chunk if it contains any text
+            if current_chunk.strip():
+                id_count += 1
                 chunks.append(
                     DocumentChunk(
                         chunk_id=id_count,
                         doc_id=doc_id,
-                        chunk_text=chunk
-                ))
+                        chunk_text=current_chunk.strip()
+                    )
+                )
+
         return chunks
     
     def get_document(self, doc_id: int) -> str:
@@ -134,3 +149,23 @@ class DocumentStore:
             return self.documents.get(chunk.doc_id, "")
         else:
             return ""
+
+    def get_doc_retrieval_response(self, sorted_chunk_ids: List[int], top_k: int) -> DocRetrievalResponse:
+        doc_ids = []
+        doc_chunks = []
+
+        for i in sorted_chunk_ids:
+            doc_chunk: DocumentChunk = self.get_chunk(i)
+
+            # doc_chunks
+            if len(doc_chunks) < top_k:
+                doc_chunks.append(doc_chunk)
+
+            # doc_ids
+            if doc_chunk.doc_id not in doc_ids:
+                # 如果文档 ID 不在 doc_ids 中，则添加
+                doc_ids.append(doc_chunk.doc_id)
+                if len(doc_ids) >= top_k:
+                    break
+
+        return DocRetrievalResponse(doc_ids, doc_chunks)

@@ -47,24 +47,8 @@ class BM25Retriever:
         )[:top_k*10]
 
         sorted_chunk_ids = [self.doc_chunk_ids[i] for i in sorted_indices]
-        
-        doc_ids = []
-        doc_chunks = []
-        for i in sorted_chunk_ids:
-            doc_chunk: DocumentChunk = self.document_store.get_chunk(i)
 
-            # doc_chunks
-            if len(doc_chunks) < top_k:
-                doc_chunks.append(doc_chunk)
-
-            # doc_ids
-            if doc_chunk.doc_id not in doc_ids:
-                # 如果文档 ID 不在 doc_ids 中，则添加
-                doc_ids.append(doc_chunk.doc_id)
-                if len(doc_ids) >= top_k:
-                    break
-
-        return DocRetrievalResponse(doc_ids, doc_chunks)
+        return self.document_store.get_doc_retrieval_response(sorted_chunk_ids, top_k)
 
     def save_data(self, save_path):
         data = {

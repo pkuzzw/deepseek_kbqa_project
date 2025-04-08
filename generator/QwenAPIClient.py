@@ -3,6 +3,7 @@ import re
 from openai import OpenAI
 from generator.prompt import SYSTEM_PROMPT
 from generator.prompt import NOT_FOUND_MESSAGE
+import time
 
 class QwenAPIClient:
     def __init__(self, api_key, api_url):
@@ -28,8 +29,8 @@ class QwenAPIClient:
                 model="Qwen/Qwen2.5-7B-Instruct",  
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Background Information：{context_tokens}"},
-                    {"role": "user", "content": question}
+                    {"role": "user", "content": f"Background Information： {context_tokens}"},
+                    {"role": "user", "content": f"Question: {question}"},
                 ],
             )
             message = response.choices[0].message.content
@@ -37,5 +38,7 @@ class QwenAPIClient:
             return message
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-            #return NOT_FOUND_MESSAGE
+            #sleep for 1 second to avoid rate limit
+            time.sleep(60)
+            return NOT_FOUND_MESSAGE
 
