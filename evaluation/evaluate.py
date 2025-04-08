@@ -19,7 +19,7 @@ class Evaluator:
         self.generator = QwenAPIClient(api_key, base_url)
 
     def evaluate_val(self):
-        with open(DATA_PATHS["val"], "r") as f:
+        with open(DATA_PATHS["test"], "r") as f:
             samples = [json.loads(line) for line in f]
         
         results = []
@@ -43,7 +43,7 @@ class Evaluator:
             print(f"Document IDs: {doc_ids}")
         
         # Save results
-        with open(DATA_PATHS["val_result_bm25"], "w") as f:
+        with open(DATA_PATHS["test_result_v1"], "w") as f:
             for res in results:
                 f.write(json.dumps(res) + "\n")
 
