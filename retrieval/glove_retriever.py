@@ -10,6 +10,7 @@ class GloVeRetriever:
         print("Initializing GloVeRetriever...")
         self.document_store = document_store
         self.doc_ids = list(document_store.documents.keys())
+        self.doc_chunk_ids = list(document_store.document_chunks.keys())
 
         # 加载 GloVe 模型
         self.glove = KeyedVectors.load_word2vec_format(glove_path, binary=False)
@@ -26,10 +27,10 @@ class GloVeRetriever:
             self._precompute_doc_vectors()
 
     def _precompute_doc_vectors(self):
-        # 预计算文档向量
-        self.doc_vectors = np.array([
-            self._document_to_vector(self.document_store.documents[doc_id])
-            for doc_id in self.doc_ids
+        # 预计算文档chunk向量
+        self.doc_chunk_vectors = np.array([
+            self._document_to_vector(self.document_store.get_chunk(doc_chunk_id).chunk_text)
+            for doc_chunk_id in self.doc_chunk_ids
         ])
 
     def _document_to_vector(self, text: str) -> np.ndarray:
@@ -44,20 +45,23 @@ class GloVeRetriever:
         # 查询向量化
         query_vector = self._document_to_vector(query)
         # 计算相似度
-        similarities = cosine_similarity([query_vector], self.doc_vectors)[0]
+        similarities = cosine_similarity([query_vector], self.doc_chunk_vectors)[0]
         # 获取 top_k 文档 ID
-        sorted_indices = np.argsort(similarities)[-top_k:][::-1]
-        return [self.doc_ids[i] for i in sorted_indices]
+        sorted_indices = np.argsort(similarities)[-top_k*10:][::-1]
+
+        sorted_chunk_ids = [self.doc_chunk_ids[i] for i in sorted_indices]
+
+        return self.document_store.get_doc_retrieval_response(sorted_chunk_ids, top_k)
 
     def save_data(self, save_path):
         data = {
-            "doc_vectors": self.doc_vectors
+            "doc_chunk_vectors": self.doc_chunk_vectors
         }
         joblib.dump(data, save_path)
         print(f"数据已保存到 {save_path}")
 
     def load_data(self, save_path):
         data = joblib.load(save_path)
-        self.doc_vectors = data["doc_vectors"]
+        self.doc_chunk_vectors = data["doc_chunk_vectors"]
         print(f"数据已从 {save_path} 加载")
     

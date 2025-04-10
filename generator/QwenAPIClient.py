@@ -1,5 +1,9 @@
 import requests
+import re
 from openai import OpenAI
+from generator.prompt import SYSTEM_PROMPT
+from generator.prompt import NOT_FOUND_MESSAGE
+import time
 
 class QwenAPIClient:
     def __init__(self, api_key, api_url):
@@ -10,24 +14,34 @@ class QwenAPIClient:
             "Content-Type": "application/json"
         }
 
-    def generate_answer(self, question, context):
+    def generate_answer(self, question, contexts):
         client = OpenAI(api_key="sk-ooscmypgomjmlrzejjhcidzhzegvmirvvweonaoacfmpcrrc", 
                         base_url="https://api.siliconflow.cn/v1")
         try:
-            print("Backgroud Information: ")
-            print(context)
+            max_seq_len = 9000
+        
+            context_tokens = "<s/> ".join(contexts)  # Join contexts into a single string
+
+            if len(context_tokens) > max_seq_len:
+                context_tokens = context_tokens[:max_seq_len]
+
             response = client.chat.completions.create(
-            model="Qwen/Qwen2.5-72B-Instruct",  
-            messages=[
-                {"role": "system", "content": "If you are a Knowledge Based Answering System's assistant, please answer the question based on the background information provided, and the scope of your answers is limited to the content provided by the background information。"},
-                {"role": "user", "content": f"Background Information：{context}"},
-                {"role": "user", "content": question}
-            ],
+                model="Qwen/Qwen2.5-7B-Instruct",  
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": f"Background Information： {context_tokens}"},
+                    {"role": "user", "content": f"Question: {question}"},
+                ],
             )
             message = response.choices[0].message.content
             print(f"Assistant: {message}")
             return message
         except Exception as e:
-            message = f"An error occurred: {str(e)}"
+            print(f"An error occurred: {str(e)}")
+            #sleep for 1 second to avoid rate limit
+            time.sleep(60)
 
+            if "{'code': 50508, 'message': 'System is too busy now. Please try again later.', 'data': None}" in str(e):
+                return self.generate_answer(question, contexts)
+            return NOT_FOUND_MESSAGE
 

@@ -3,6 +3,7 @@ from retrieval.bm25_retriever import BM25Retriever
 from retrieval.glove_retriever import GloVeRetriever
 from generator.QwenAPIClient import QwenAPIClient
 from retrieval.document_store import DocumentStore
+from generator.prompt import NOT_FOUND_MESSAGE
 
 
 # Initialize components (with caching)
@@ -13,11 +14,11 @@ def init_system():
     document_store = DocumentStore("data/documents.jsonl")
     BM25_save_path = "bm25_data.pkl"
     glove_save_path = "glove_data.pkl"
-    api_key = "sk-ooscmypgomjmlrzejjhcidzhzegvmirvvweonaoacfmpcrrc"
+    api_key = "sk-dwpxzqylfqdijatcxhmaqgjrjruxveypcziudbxfbzfwmaju"
     base_url = "https://api.siliconflow.cn"
     # Initialize the system components
     return {
-        "bm25": BM25Retriever(document_store,BM25_save_path),  # BM25 retriever for document retrieval
+        "bm25": BM25Retriever(document_store, BM25_save_path),  # BM25 retriever for document retrieval
       #  "DPR": DPRRetriever(document_store),  # Uncomment to add DPR retriever
         "glove": GloVeRetriever(document_store, "glove/glove.6B.300d.w2vformat.txt",glove_save_path),  # GloVe retriever
         "generator": QwenAPIClient(api_key, base_url) ,  # Answer generator using Qwen API
@@ -51,18 +52,22 @@ def main():
         # Perform retrieval
         with st.spinner("Searching knowledge base..."):  # Show spinner while retrieving documents
             if retriever_type == "BM25":
-                doc_ids = system["bm25"].retrieve(question, top_k)  # Retrieve documents using BM25
+                doc_retrieval_response = system["bm25"].retrieve(question, top_k)  # Retrieve documents using BM25
             else:
-                doc_ids = system["glove"].retrieve(question, top_k)  # Retrieve documents using GloVe
+                doc_retrieval_response = system["glove"].retrieve(question, top_k)  # Retrieve documents using GloVe
             
+            doc_ids = doc_retrieval_response.topk_doc_id
             contexts = [system["docs"].get_document(did) for did in doc_ids]  # Get document contents
         
         # Display retrieval results
         st.subheader("🔍 Retrieved Documents")  # Display retrieved documents
-        selected_context = None
+        selected_context = contexts[0] if contexts else None  # Default to the first context if available
+        selected_id = doc_ids[0] if doc_ids else None  # Default to the first document ID if available
+
         for i, (doc_id, context) in enumerate(zip(doc_ids, contexts)):
             if st.button(f"Use Document {i+1} (ID: {doc_id})"):  # Button to select a document
                 selected_context = context  # Set the selected context
+                selected_id = doc_id  # Set the selected context document ID
         
         # Generate answer
         if selected_context:
@@ -71,10 +76,14 @@ def main():
         else:
             st.warning("Please select a document to generate an answer.")  # Warning if no document is selected
 
-        
+
         # Display answer
         st.subheader("💡 Answer")  # Display the generated answer
-        st.text_area("Generated Answer", value=answer, height=200)  # Use a large text area to display the answer
+        st.text_area("Generated Answer", value=answer, height=5)  # Use a text area to display the answer
+
+        if selected_context:
+            st.subheader(f"📄 Selected Document ID: {selected_id}")
+            st.text_area("Document Content", value=selected_context, height=500)  # Display the selected document content
 
 if __name__ == "__main__":
     print("Running app.py...")  # Log message when the app starts
